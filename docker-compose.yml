@@ -1,0 +1,77 @@
+version: '3'
+services:
+  helipad-dev:
+    image: rust
+    command: ['sleep', 'infinity']
+    environment:
+      LND_ADMINMACAROON: /lnd/data/chain/bitcoin/regtest/admin.macaroon
+      LND_URL: lnd2:10009
+    ports:
+      - 2112:2112
+    networks:
+      - bitcoind-regtest
+    volumes:
+      - lnd2:/lnd
+      - helipad-data:/data
+      - ./helipad:/opt/helipad
+  bitcoind1:
+    image: lncm/bitcoind:v25.1
+    command:
+      - '-regtest'
+      - '-conf=/etc/bitcoin.conf'
+    networks:
+      - bitcoind-regtest
+    volumes:
+      - './docker/etc/bitcoin.conf:/etc/bitcoin.conf'
+      - bitcoin1:/data/.bitcoin
+      - './docker/scripts:/tmp/scripts'
+  bitcoind2:
+    image: lncm/bitcoind:v25.1
+    command:
+      - '-regtest'
+      - '-conf=/etc/bitcoin.conf'
+    networks:
+      - bitcoind-regtest
+    volumes:
+      - './docker/etc/bitcoin.conf:/etc/bitcoin.conf'
+      # - './docker/home2/.bitcoin:/data/.bitcoin'
+      - bitcoin2:/data/.bitcoin
+      - './docker/scripts:/tmp/scripts'
+  lnd1:
+    image: lightninglabs/lnd:v0.17.3-beta
+    command:
+      - '--configfile=/etc/lnd.conf'
+      - '--bitcoind.rpchost=bitcoind1'
+      - '--bitcoind.zmqpubrawblock=tcp://bitcoind1:28332'
+      - '--bitcoind.zmqpubrawtx=tcp://bitcoind1:28333'
+    links:
+      - bitcoind1
+    networks:
+      - bitcoind-regtest
+    volumes:
+      - lnd1:/root/.lnd
+      - './docker/etc/lnd.conf:/etc/lnd.conf'
+      - './docker/scripts:/tmp/scripts'
+  lnd2:
+    image: lightninglabs/lnd:v0.17.3-beta
+    command:
+      - '--configfile=/etc/lnd.conf'
+      - '--bitcoind.rpchost=bitcoind2'
+      - '--bitcoind.zmqpubrawblock=tcp://bitcoind2:28332'
+      - '--bitcoind.zmqpubrawtx=tcp://bitcoind2:28333'
+    links:
+      - bitcoind2
+    networks:
+      - bitcoind-regtest
+    volumes:
+      - lnd2:/root/.lnd
+      - './docker/etc/lnd.conf:/etc/lnd.conf'
+      - './docker/scripts:/tmp/scripts'
+networks:
+  bitcoind-regtest:
+volumes:
+  bitcoin1:
+  bitcoin2:
+  lnd1:
+  lnd2:
+  helipad-data:

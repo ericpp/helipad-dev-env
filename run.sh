@@ -7,7 +7,11 @@ sleep 5
 # unlock bitcoin wallet
 docker compose exec bitcoind1 /tmp/scripts/init-wallet.sh
 docker compose exec bitcoind2 /tmp/scripts/init-wallet.sh
-sleep 20
+sleep 10
+
+echo "Generating some blocks..."
+docker compose exec bitcoind1 bitcoin-cli -regtest -generate 300
+sleep 10
 
 # connect lnd nodes
 echo "Connecting LND nodes together..."
@@ -28,9 +32,6 @@ if [ "$CHANNELS" = "[]" ]; then
   docker compose exec lnd1 lncli -n regtest openchannel $PUBKEY 10000000 5000000
   docker compose exec bitcoind1 bitcoin-cli -regtest -generate 10
 fi
-
-echo "Generating some blocks..."
-docker compose exec bitcoind1 bitcoin-cli -regtest -generate 300
 
 echo "Opening Helipad development shell..."
 docker compose exec -e LND_ADMINMACAROON=/lnd/data/chain/bitcoin/regtest/admin.macaroon -w /opt/helipad helipad-dev /bin/bash
